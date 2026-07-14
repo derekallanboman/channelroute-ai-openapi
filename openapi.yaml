@@ -1,0 +1,285 @@
+openapi: 3.1.0
+
+info:
+  title: ChannelRoute AI API
+  version: 1.0.0
+  description: >
+    Public API specification for ChannelRoute AI prospect workflows,
+    Zapier integration, authentication, and developer automation.
+  contact:
+    name: ChannelRoute AI Support
+    email: founder@channelroute.ai
+    url: https://www.channelroute.ai
+  license:
+    name: All rights reserved
+
+servers:
+  - url: https://channel-route-ai-call-intelligence-prototype.replit.app
+    description: Production API
+
+tags:
+  - name: Authentication
+    description: Test API credentials.
+  - name: Prospects
+    description: Create and retrieve prospect records.
+
+paths:
+  /api/zapier/auth-test:
+    get:
+      tags:
+        - Authentication
+      summary: Test API authentication
+      description: Confirms that the supplied ChannelRoute AI API key is valid.
+      operationId: testAuthentication
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccess"
+              example:
+                success: true
+                app: ChannelRoute AI
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: Invalid API key
+        "500":
+          description: Server authentication configuration error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: Server API key is not configured
+
+  /api/prospects:
+    get:
+      tags:
+        - Prospects
+      summary: List prospects
+      description: >
+        Returns prospect records currently available in ChannelRoute AI.
+        Zapier uses this endpoint for the New Prospect polling trigger.
+      operationId: listProspects
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Prospect records returned successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prospect"
+              example:
+                - id: 1
+                  contactName: John Test
+                  company: Test Roofing Company
+                  phone: "2145550123"
+                  city: Dallas
+                  state: TX
+                  niche: Roofing
+                  source: zapier
+                  tags: []
+                  score: 75
+                  status: ready
+                  notes: ""
+                  businessSummary: ""
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Prospects
+      summary: Create a prospect
+      description: >
+        Creates a new ChannelRoute AI prospect record.
+        Zapier uses this endpoint for the Create Prospect action.
+      operationId: createProspect
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProspectRequest"
+            example:
+              company: Test Roofing Company
+              owner: John Test
+              phone: "2145550123"
+              city: Dallas
+              state: TX
+              niche: Roofing
+              source: zapier
+              tags: []
+              score: 75
+      responses:
+        "201":
+          description: Prospect created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateProspectResponse"
+        "400":
+          description: Missing, invalid, or malformed prospect data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidData:
+                  summary: Missing or invalid data
+                  value:
+                    error: Missing or invalid prospect data
+                invalidJson:
+                  summary: Invalid JSON
+                  value:
+                    error: Invalid JSON
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: >
+        API key issued by ChannelRoute AI.
+        Request access at https://www.channelroute.ai/api-authentication
+
+  schemas:
+    AuthSuccess:
+      type: object
+      required:
+        - success
+        - app
+      properties:
+        success:
+          type: boolean
+          example: true
+        app:
+          type: string
+          example: ChannelRoute AI
+
+    Prospect:
+      type: object
+      required:
+        - id
+        - contactName
+        - company
+        - phone
+        - city
+        - score
+        - status
+      properties:
+        id:
+          type: integer
+          example: 1
+        contactName:
+          type: string
+          example: John Test
+        company:
+          type: string
+          example: Test Roofing Company
+        phone:
+          type: string
+          example: "2145550123"
+        city:
+          type: string
+          example: Dallas
+        state:
+          type: string
+          example: TX
+        niche:
+          type: string
+          example: Roofing
+        source:
+          type: string
+          example: zapier
+        tags:
+          type: array
+          items:
+            type: string
+        score:
+          type: number
+          example: 75
+        status:
+          type: string
+          example: ready
+        notes:
+          type: string
+          example: ""
+        businessSummary:
+          type: string
+          example: ""
+
+    CreateProspectRequest:
+      type: object
+      required:
+        - company
+        - owner
+        - phone
+        - city
+        - score
+      properties:
+        company:
+          type: string
+        owner:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        niche:
+          type: string
+        source:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        score:
+          type: number
+
+    CreateProspectResponse:
+      type: object
+      required:
+        - message
+        - prospect
+      properties:
+        message:
+          type: string
+          example: Prospect created
+        prospect:
+          $ref: "#/components/schemas/Prospect"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
